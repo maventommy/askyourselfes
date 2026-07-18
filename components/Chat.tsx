@@ -2,12 +2,26 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, FlatList, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { ensureAnonSession } from '../lib/supabase';
 import { loadHistory, sendMessage, type Msg } from '../lib/chat';
+import { speak, voiceSupported } from '../lib/voice';
 
 export default function Chat({ futureAge }: { futureAge: number | null }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
+  const [speaking, setSpeaking] = useState<number | null>(null);
   const listRef = useRef<FlatList<Msg>>(null);
+
+  async function hear(index: number, content: string) {
+    if (speaking !== null) return;
+    setSpeaking(index);
+    try {
+      await speak(content);
+    } catch (e) {
+      console.warn('speak failed', e);
+    } finally {
+      setSpeaking(null);
+    }
+  }
 
   useEffect(() => {
     (async () => {
@@ -44,9 +58,14 @@ export default function Chat({ futureAge }: { futureAge: number | null }) {
         contentContainerStyle={s.list}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
         ListEmptyComponent={<Text style={s.empty}>Ask yourself anything. It already knows you.</Text>}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <View style={[s.bubble, item.role === 'user' ? s.user : s.future]}>
             <Text style={item.role === 'user' ? s.userText : s.futureText}>{item.content}</Text>
+            {item.role === 'future_self' && voiceSupported && !item.content.startsWith('(') && (
+              <Pressable style={s.hear} onPress={() => hear(index, item.content)} disabled={speaking !== null}>
+                <Text style={s.hearText}>{speaking === index ? '◈ speaking…' : '◇ hear it'}</Text>
+              </Pressable>
+            )}
           </View>
         )}
       />
@@ -71,6 +90,8 @@ const s = StyleSheet.create({
   future: { alignSelf: 'flex-start', backgroundColor: '#181612' },
   userText: { color: '#0d0c0a', fontSize: 15, lineHeight: 21 },
   futureText: { color: '#f4ede0', fontSize: 15, lineHeight: 21 },
+  hear: { marginTop: 8, alignSelf: 'flex-start' },
+  hearText: { color: '#c4a878', fontSize: 12, letterSpacing: 1 },
   inputRow: { flexDirection: 'row', padding: 12, gap: 8, backgroundColor: '#0d0c0a' },
   input: { flex: 1, backgroundColor: '#181612', borderColor: '#3a342b', borderWidth: 1, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, color: '#f4ede0' },
   send: { backgroundColor: '#c4a878', borderRadius: 22, paddingHorizontal: 18, justifyContent: 'center' },
