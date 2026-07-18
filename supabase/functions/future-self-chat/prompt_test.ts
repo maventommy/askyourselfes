@@ -14,6 +14,17 @@ Deno.test('system prompt grounds in profile + states honesty rule', () => {
   assertStringIncludes(p.toLowerCase(), 'honest');
 });
 
+Deno.test('tone becomes a behavior instruction, not a fact line', () => {
+  const p = buildSystemPrompt({
+    display_name: 'Tom',
+    current_age: 25,
+    future_age: 55,
+    profile_json: { worried_about: 'moving', tone: 'blunt' },
+  });
+  assertStringIncludes(p.toLowerCase(), 'blunt');
+  if (p.includes('- tone:')) throw new Error('tone leaked into facts list');
+});
+
 Deno.test('handles empty profile without throwing', () => {
   const p = buildSystemPrompt({
     display_name: null,

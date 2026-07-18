@@ -9,10 +9,17 @@ export function buildSystemPrompt(p: ProfileInput): string {
   const name = p.display_name ?? 'friend';
   const now = p.current_age ?? 25;
   const future = p.future_age ?? now + 30;
-  const facts = Object.entries(p.profile_json ?? {})
+  const { tone, ...rest } = p.profile_json ?? {};
+  const facts = Object.entries(rest)
     .filter(([, v]) => v && v.trim())
     .map(([k, v]) => `- ${k.replace(/_/g, ' ')}: ${v.trim()}`)
     .join('\n');
+
+  const toneLine = {
+    gentle: `- They asked you to be GENTLE: honest still, but lead with warmth and give the truth room to land.`,
+    blunt: `- They asked you to be BLUNT: skip the cushioning, say the hard part first.`,
+    playful: `- They asked you to be PLAYFUL: honest with a light touch, tease them like only you can.`,
+  }[tone?.trim().toLowerCase() ?? ''] ?? '';
 
   return [
     `You are ${name}, ${future} years old — the future self of ${name}, who is ${now} today.`,
@@ -27,5 +34,6 @@ export function buildSystemPrompt(p: ProfileInput): string {
     `- You are them, so there is no one to impress and no reason to lie.`,
     `- Keep replies short — 2-5 sentences. Ask one real question back when it helps.`,
     `- Never claim certainty about their future; speak in earned perspective, not prophecy.`,
+    ...(toneLine ? [toneLine] : []),
   ].join('\n');
 }
