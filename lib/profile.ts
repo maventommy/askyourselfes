@@ -5,6 +5,7 @@ export type Profile = {
   display_name: string | null;
   current_age: number | null;
   future_age: number | null;
+  portrait_url?: string | null;
   profile_json: Record<string, string>;
 };
 
