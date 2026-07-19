@@ -45,7 +45,14 @@ export default function App() {
           onDone={() => refresh({ skipReveal: true })}
         />
       )}
-      {stage === 'chat' && <Chat futureAge={profile?.future_age ?? null} />}
+      {stage === 'chat' && (
+        <Chat
+          futureAge={profile?.future_age ?? null}
+          currentAge={profile?.current_age ?? null}
+          displayName={profile?.display_name ?? null}
+          portraitUrl={profile?.portrait_url ?? null}
+        />
+      )}
     </View>
   );
 }

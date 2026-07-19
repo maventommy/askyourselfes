@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, FlatList, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { ensureAnonSession } from '../lib/supabase';
 import { loadHistory, sendMessage, type Msg } from '../lib/chat';
 import { speak, voiceSupported } from '../lib/voice';
 
-export default function Chat({ futureAge }: { futureAge: number | null }) {
+type ChatProps = {
+  futureAge: number | null;
+  currentAge?: number | null;
+  displayName?: string | null;
+  portraitUrl?: string | null;
+};
+
+export default function Chat({ futureAge, currentAge, displayName, portraitUrl }: ChatProps) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -40,7 +47,7 @@ export default function Chat({ futureAge }: { futureAge: number | null }) {
       const reply = await sendMessage(t);
       setMsgs((m) => [...m, { role: 'future_self', content: reply }]);
     } catch {
-      setMsgs((m) => [...m, { role: 'future_self', content: '(I lost my train of thought — try again.)' }]);
+      setMsgs((m) => [...m, { role: 'future_self', content: '(I lost my train of thought. Try again.)' }]);
     } finally {
       setBusy(false);
     }
@@ -49,6 +56,7 @@ export default function Chat({ futureAge }: { futureAge: number | null }) {
   return (
     <KeyboardAvoidingView style={s.bg} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={s.header}>
+        {portraitUrl ? <Image source={{ uri: portraitUrl }} style={s.headerPortrait} /> : null}
         <Text style={s.headerTitle}>You{futureAge ? `, age ${futureAge}` : ''}</Text>
       </View>
       <FlatList
@@ -57,7 +65,16 @@ export default function Chat({ futureAge }: { futureAge: number | null }) {
         keyExtractor={(_, i) => String(i)}
         contentContainerStyle={s.list}
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
-        ListEmptyComponent={<Text style={s.empty}>Ask yourself anything. It already knows you.</Text>}
+        ListEmptyComponent={
+          <View>
+            <View style={[s.bubble, s.future]}>
+              <Text style={s.futureText}>
+                {`Hey${displayName ? ` ${displayName}` : ''}. It's me. Well, you. ${futureAge && currentAge ? futureAge - currentAge : 'Thirty'} years on. I remember being where you're sitting. Ask what you actually want to know.`}
+              </Text>
+            </View>
+            <Text style={s.empty}>It already knows you. You built it.</Text>
+          </View>
+        }
         renderItem={({ item, index }) => (
           <View style={[s.bubble, item.role === 'user' ? s.user : s.future]}>
             <Text style={item.role === 'user' ? s.userText : s.futureText}>{item.content}</Text>
@@ -81,7 +98,8 @@ export default function Chat({ futureAge }: { futureAge: number | null }) {
 
 const s = StyleSheet.create({
   bg: { flex: 1, backgroundColor: '#0d0c0a' },
-  header: { paddingTop: 56, paddingBottom: 14, alignItems: 'center', borderBottomColor: '#231f18', borderBottomWidth: 1 },
+  header: { paddingTop: 52, paddingBottom: 12, alignItems: 'center', borderBottomColor: '#231f18', borderBottomWidth: 1, gap: 8 },
+  headerPortrait: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: '#c4a878' },
   headerTitle: { color: '#f4ede0', fontFamily: 'Georgia', fontSize: 18 },
   list: { padding: 16, gap: 10 },
   empty: { color: '#998b73', textAlign: 'center', marginTop: 48, fontStyle: 'italic' },
