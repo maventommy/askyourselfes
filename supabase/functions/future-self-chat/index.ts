@@ -54,13 +54,15 @@ Deno.serve(async (req: Request) => {
       Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
     },
     // gpt-5.6-luna rejects custom temperature (only default 1 supported) — verified 2026-07-19
-    body: JSON.stringify({ model: 'gpt-5.6-luna', messages, max_completion_tokens: 300 }),
+    body: JSON.stringify({ model: 'gpt-5.6-luna', messages, max_completion_tokens: 600 }),
   });
   if (!ai.ok) {
     console.error('OpenAI error', ai.status, await ai.text());
     return new Response('LLM error', { status: 502, headers: corsHeaders });
   }
-  const reply = (await ai.json()).choices?.[0]?.message?.content?.trim() ?? '...';
+  // `|| fallback`, not `??`: the model can return an empty string, which is not nullish
+  const reply = ((await ai.json()).choices?.[0]?.message?.content ?? '').trim()
+    || '(I went quiet for a moment. Ask me again.)';
 
   await supa.from('messages').insert([
     { user_id: user.id, role: 'user', content: message },
