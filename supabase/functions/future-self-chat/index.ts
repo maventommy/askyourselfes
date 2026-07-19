@@ -53,7 +53,8 @@ Deno.serve(async (req: Request) => {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
     },
-    body: JSON.stringify({ model: 'gpt-5.6-luna', messages, max_completion_tokens: 300, temperature: 0.8 }),
+    // gpt-5.6-luna rejects custom temperature (only default 1 supported) — verified 2026-07-19
+    body: JSON.stringify({ model: 'gpt-5.6-luna', messages, max_completion_tokens: 300 }),
   });
   if (!ai.ok) {
     console.error('OpenAI error', ai.status, await ai.text());
