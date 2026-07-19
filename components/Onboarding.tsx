@@ -39,8 +39,11 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
   const last = step === STEPS.length - 1;
   const progress = step / (STEPS.length - 1);
   const currentAge = parseInt(answers.age ?? '', 10) || 25;
-  const sliderValue = futureAge || Math.min(currentAge + 30, 90);
-  const sliderMin = Math.min(currentAge + 5, 89);
+  // locked spec: 5-year increments, 30-80, never at or below current age
+  const sliderMin = Math.max(30, Math.ceil((currentAge + 1) / 5) * 5);
+  const sliderMax = 80;
+  const defaultAge = Math.min(sliderMax, Math.max(sliderMin, Math.round((currentAge + 30) / 5) * 5));
+  const sliderValue = futureAge || defaultAge;
 
   function set(key: string, v: string) {
     setAnswers((a) => ({ ...a, [key]: v }));
@@ -96,11 +99,12 @@ export default function Onboarding({ onDone }: { onDone: () => void }) {
         <View style={s.sliderWrap}>
           <Text style={s.futureAge}>{sliderValue}</Text>
           <Text style={s.futureAgeLabel}>YEARS OLD · {sliderValue - currentAge} YEARS FROM NOW</Text>
-          <AgeSlider min={sliderMin} max={90} value={sliderValue} onChange={setFutureAge} />
+          <AgeSlider min={sliderMin} max={sliderMax} step={5} value={sliderValue} onChange={setFutureAge} />
           <View style={s.sliderEnds}>
             <Text style={s.sliderEnd}>{sliderMin}</Text>
-            <Text style={s.sliderEnd}>90</Text>
+            <Text style={s.sliderEnd}>{sliderMax}</Text>
           </View>
+          <Text style={s.baseline}>you are {currentAge} today</Text>
         </View>
       )}
 
@@ -151,6 +155,7 @@ const s = StyleSheet.create({
   slider: { width: '100%', height: 40 },
   sliderEnds: { flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
   sliderEnd: { color: '#998b73', fontSize: 13 },
+  baseline: { color: '#c4a878', fontSize: 12, letterSpacing: 1, marginTop: 6, fontStyle: 'italic' },
   toneRow: { flexDirection: 'row', gap: 10, marginTop: 6 },
   tone: { flex: 1, borderWidth: 1, borderColor: '#3a342b', borderRadius: 10, paddingVertical: 16, alignItems: 'center', backgroundColor: '#181612' },
   toneOn: { borderColor: '#c4a878', backgroundColor: '#1f1b14' },
