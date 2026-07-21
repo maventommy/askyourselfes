@@ -5,4 +5,4 @@ npx expo export -p web
 # belt-and-suspenders: make sure public assets are at dist root
 Copy-Item public\* dist\ -Force
 node scripts/inject-pwa.mjs dist/index.html
-npx wrangler pages deploy dist --project-name ask-yourselves --commit-dirty=true
+npx wrangler pages deploy dist --project-name ask-yourselves --branch main --commit-dirty=true

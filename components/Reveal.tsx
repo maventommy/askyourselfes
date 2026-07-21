@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, Pressable, Image, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Image, ActivityIndicator, StyleSheet, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 
@@ -9,13 +9,11 @@ export default function Reveal({ futureAge, onDone }: { futureAge: number | null
   const [phase, setPhase] = useState<Phase>('pick');
   const [portraitUrl, setPortraitUrl] = useState<string | null>(null);
 
-  async function pickAndAge() {
-    const res = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7 });
-    if (res.canceled || !res.assets?.[0]?.base64) return;
+  async function startAging(selfieBase64: string) {
     setPhase('working');
     try {
       const { data, error } = await supabase.functions.invoke('age-portrait', {
-        body: { selfie_b64: res.assets[0].base64 },
+        body: { selfie_b64: selfieBase64 },
       });
       if (error || !data?.portrait_url) throw error ?? new Error('no portrait');
       setPortraitUrl(data.portrait_url as string);
@@ -25,6 +23,35 @@ export default function Reveal({ futureAge, onDone }: { futureAge: number | null
       setPhase('error');
     }
   }
+
+  // Native: expo-image-picker.
+  async function pickNative() {
+    const res = await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7 });
+    if (res.canceled || !res.assets?.[0]?.base64) return;
+    startAging(res.assets[0].base64);
+  }
+
+  // Web / installed PWA: click a real file input SYNCHRONOUSLY within the tap so
+  // standalone PWAs do not reject it for losing user activation (the bug where
+  // the selfie works in-browser but not in the home-screen app view).
+  function pickWeb() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const b64 = String(reader.result).split(',')[1] ?? '';
+        if (b64) startAging(b64);
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  }
+
+  const pickAndAge = Platform.OS === 'web' ? pickWeb : pickNative;
 
   return (
     <View style={s.bg}>
