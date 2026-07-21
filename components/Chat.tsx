@@ -9,9 +9,10 @@ type ChatProps = {
   currentAge?: number | null;
   displayName?: string | null;
   portraitUrl?: string | null;
+  tone?: string;
 };
 
-export default function Chat({ futureAge, currentAge, displayName, portraitUrl }: ChatProps) {
+export default function Chat({ futureAge, currentAge, displayName, portraitUrl, tone }: ChatProps) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -90,7 +91,7 @@ export default function Chat({ futureAge, currentAge, displayName, portraitUrl }
     setBusy(true);
     setMsgs((m) => [...m, { role: 'user', content: t }]);
     try {
-      const reply = await sendMessage(t);
+      const reply = await sendMessage(t, tone);
       setMsgs((m) => [...m, { role: 'future_self', content: reply }]);
       if (autoplay && voiceSupported && !reply.startsWith('(')) hear(msgs.length + 1, reply);
     } catch {

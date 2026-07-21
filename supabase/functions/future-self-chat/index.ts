@@ -13,7 +13,7 @@ Deno.serve(async (req: Request) => {
   const authHeader = req.headers.get('Authorization') ?? '';
   if (!authHeader.startsWith('Bearer ')) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
 
-  const { message } = await req.json().catch(() => ({ message: '' }));
+  const { message, tone } = await req.json().catch(() => ({ message: '' }));
   if (!message || typeof message !== 'string') return new Response('Bad request', { status: 400, headers: corsHeaders });
 
   // user-scoped client → RLS enforces "own rows only"
@@ -35,12 +35,16 @@ Deno.serve(async (req: Request) => {
     .limit(24);
   const history = (recent ?? []).reverse();
 
+  const baseProfile = profile ?? { display_name: null, current_age: null, future_age: null, profile_json: {} };
+  // Per-session mood: the client can send a `tone` that overrides the stored one for this message only.
+  const effectiveProfile = (tone && typeof tone === 'string')
+    ? { ...baseProfile, profile_json: { ...(baseProfile.profile_json ?? {}), tone } }
+    : baseProfile;
+
   const messages = [
     {
       role: 'system',
-      content: buildSystemPrompt(
-        profile ?? { display_name: null, current_age: null, future_age: null, profile_json: {} },
-      ),
+      content: buildSystemPrompt(effectiveProfile),
     },
     ...(history ?? []).map((m: { role: string; content: string }) => ({
       role: m.role === 'future_self' ? 'assistant' : 'user',

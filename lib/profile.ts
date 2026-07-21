@@ -18,6 +18,18 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   return (data as Profile) ?? null;
 }
 
+/** Persist the latest per-session tone choice so it pre-selects next time. */
+export async function updateTone(
+  userId: string,
+  currentJson: Record<string, string>,
+  tone: string,
+): Promise<void> {
+  await supabase
+    .from('profiles')
+    .update({ profile_json: { ...currentJson, tone }, updated_at: new Date().toISOString() })
+    .eq('user_id', userId);
+}
+
 export async function saveProfile(p: {
   user_id: string;
   display_name: string;
