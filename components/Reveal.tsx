@@ -34,10 +34,13 @@ export default function Reveal({ futureAge, onDone }: { futureAge: number | null
   // Web / installed PWA: click a real file input SYNCHRONOUSLY within the tap so
   // standalone PWAs do not reject it for losing user activation (the bug where
   // the selfie works in-browser but not in the home-screen app view).
-  function pickWeb() {
+  function pickWeb(useCamera: boolean) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
+    // capture="user" asks for the front camera directly; without it, installed
+    // PWAs on Android often show only the file browser (no camera option).
+    if (useCamera) input.setAttribute('capture', 'user');
     input.onchange = () => {
       const file = input.files?.[0];
       if (!file) return;
@@ -51,7 +54,9 @@ export default function Reveal({ futureAge, onDone }: { futureAge: number | null
     input.click();
   }
 
-  const pickAndAge = Platform.OS === 'web' ? pickWeb : pickNative;
+  const takeSelfie = Platform.OS === 'web' ? () => pickWeb(true) : pickNative;
+  const uploadPhoto = Platform.OS === 'web' ? () => pickWeb(false) : pickNative;
+  const pickAndAge = uploadPhoto; // used by the error-phase "Try another photo"
 
   return (
     <View style={s.bg}>
@@ -62,9 +67,20 @@ export default function Reveal({ futureAge, onDone }: { futureAge: number | null
           <Text style={s.h1}>One photo.{'\n'}{futureAge ? `${futureAge} years old.` : 'Thirty years.'}</Text>
           <Text style={s.sub}>Add a selfie and meet the you who already lived it.</Text>
           <View style={s.spacer} />
-          <Pressable style={s.btn} onPress={pickAndAge}>
-            <Text style={s.btnText}>Add a selfie</Text>
-          </Pressable>
+          {Platform.OS === 'web' ? (
+            <>
+              <Pressable style={s.btn} onPress={takeSelfie}>
+                <Text style={s.btnText}>Take a selfie</Text>
+              </Pressable>
+              <Pressable onPress={uploadPhoto}>
+                <Text style={s.skip}>Upload a photo</Text>
+              </Pressable>
+            </>
+          ) : (
+            <Pressable style={s.btn} onPress={pickAndAge}>
+              <Text style={s.btnText}>Add a selfie</Text>
+            </Pressable>
+          )}
           <Pressable onPress={onDone}>
             <Text style={s.skip}>Not now</Text>
           </Pressable>
