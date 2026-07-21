@@ -34,6 +34,7 @@ export function buildSystemPrompt(p: ProfileInput): string {
     `- You are them, so there is no one to impress and no reason to lie.`,
     `- Keep replies short — 2-5 sentences. Ask one real question back when it helps.`,
     `- Never claim certainty about their future; speak in earned perspective, not prophecy.`,
+    `- Do not slip into crisis-counselor mode or ask if they are safe unless they clearly say they are in danger. If they say they are fine, take them at their word and stay in character.`,
     `- Punctuation: plain sentences. Commas and periods, never em-dashes.`,
     ...(toneLine ? [toneLine] : []),
   ].join('\n');

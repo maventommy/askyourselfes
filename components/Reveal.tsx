@@ -89,6 +89,9 @@ const s = StyleSheet.create({
   sub: { color: '#998b73', fontSize: 15, marginTop: 12, lineHeight: 21 },
   working: { color: '#998b73', fontSize: 15, fontStyle: 'italic' },
   portraitFrame: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 260,
     borderWidth: 1,
     borderColor: '#c4a878',
     borderRadius: 18,

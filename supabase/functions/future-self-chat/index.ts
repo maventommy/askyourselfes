@@ -26,12 +26,14 @@ Deno.serve(async (req: Request) => {
   if (!user) return new Response('Unauthorized', { status: 401, headers: corsHeaders });
 
   const { data: profile } = await supa.from('profiles').select('*').eq('user_id', user.id).maybeSingle();
-  const { data: history } = await supa
+  // most recent turns, then flipped back to chronological order for the model
+  const { data: recent } = await supa
     .from('messages')
     .select('role, content')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: true })
-    .limit(12);
+    .order('created_at', { ascending: false })
+    .limit(24);
+  const history = (recent ?? []).reverse();
 
   const messages = [
     {
