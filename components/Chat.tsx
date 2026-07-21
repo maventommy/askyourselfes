@@ -16,7 +16,18 @@ export default function Chat({ futureAge, currentAge, displayName, portraitUrl }
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [speaking, setSpeaking] = useState<number | null>(null);
+  const [autoplay, setAutoplay] = useState(() => {
+    try { return Platform.OS === 'web' && localStorage.getItem('ay_autoplay') === '1'; } catch { return false; }
+  });
   const listRef = useRef<FlatList<Msg>>(null);
+
+  function toggleAutoplay() {
+    setAutoplay((v) => {
+      const next = !v;
+      try { if (Platform.OS === 'web') localStorage.setItem('ay_autoplay', next ? '1' : '0'); } catch {}
+      return next;
+    });
+  }
 
   async function hear(index: number, content: string) {
     if (speaking !== null) return;
@@ -46,6 +57,7 @@ export default function Chat({ futureAge, currentAge, displayName, portraitUrl }
     try {
       const reply = await sendMessage(t);
       setMsgs((m) => [...m, { role: 'future_self', content: reply }]);
+      if (autoplay && voiceSupported && !reply.startsWith('(')) hear(msgs.length + 1, reply);
     } catch {
       setMsgs((m) => [...m, { role: 'future_self', content: '(I lost my train of thought. Try again.)' }]);
     } finally {
@@ -58,6 +70,11 @@ export default function Chat({ futureAge, currentAge, displayName, portraitUrl }
       <View style={s.header}>
         {portraitUrl ? <Image source={{ uri: portraitUrl }} style={s.headerPortrait} /> : null}
         <Text style={s.headerTitle}>You{futureAge ? `, age ${futureAge}` : ''}</Text>
+        {voiceSupported && (
+          <Pressable onPress={toggleAutoplay} style={s.autoBtn} hitSlop={8}>
+            <Text style={s.autoText}>{autoplay ? '◆ Autoplay on' : '◇ Autoplay off'}</Text>
+          </Pressable>
+        )}
       </View>
       <FlatList
         ref={listRef}
@@ -101,6 +118,8 @@ const s = StyleSheet.create({
   header: { paddingTop: 52, paddingBottom: 12, alignItems: 'center', borderBottomColor: '#231f18', borderBottomWidth: 1, gap: 8 },
   headerPortrait: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: '#c4a878' },
   headerTitle: { color: '#f4ede0', fontFamily: 'Georgia', fontSize: 18 },
+  autoBtn: { marginTop: 2 },
+  autoText: { color: '#c4a878', fontSize: 12, letterSpacing: 1 },
   list: { padding: 16, gap: 10 },
   empty: { color: '#998b73', textAlign: 'center', marginTop: 48, fontStyle: 'italic' },
   bubble: { padding: 12, borderRadius: 16, maxWidth: '82%' },
