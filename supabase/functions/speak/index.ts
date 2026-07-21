@@ -21,7 +21,8 @@ Deno.serve(async (req: Request) => {
 
   const { text } = await req.json().catch(() => ({ text: '' }));
   if (!text || typeof text !== 'string') return err('bad request', 400);
-  if (text.length > 600) return err('too long', 413);
+  // OpenAI TTS accepts up to 4096 chars; truncate rather than reject so replies always speak
+  const input = text.length > 4000 ? text.slice(0, 4000) : text;
 
   const supa = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -40,7 +41,7 @@ Deno.serve(async (req: Request) => {
     body: JSON.stringify({
       model: 'gpt-4o-mini-tts',
       voice: 'onyx',
-      input: text,
+      input,
       speed: 0.95,
       instructions: 'A calm older voice, warm and plainspoken, talking to their younger self.',
     }),
