@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
  * generate-share-card.mjs
- * Renders a 1200x630 branded "Ask Yourselves" social share card from a
+ * Renders a branded "Ask Yourselves" social share card from a
  * before/after portrait pair.
  *
  * Usage:
- *   node scripts/generate-share-card.mjs --before you-today.jpg --after you-aged.jpg --out card.jpg
+ *   node scripts/generate-share-card.mjs --before you-today.jpg --after you-aged.jpg --out card.jpg [--size 1200x630]
  *
  * Rendering strategy (first available wins):
  *   1. @napi-rs/canvas  (best: draws everything, outputs JPEG)
@@ -19,7 +19,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-const W = 1200, H = 630;
+const DEFAULT_SIZE = { width: 1200, height: 630 };
 const INK = '#0d0c0a', CREAM = '#f4ede0', GOLD = '#c4a878', MUTED = '#cbbfa8';
 
 function parseArgs(argv) {
@@ -29,6 +29,7 @@ function parseArgs(argv) {
     if (a === '--before') args.before = argv[++i];
     else if (a === '--after') args.after = argv[++i];
     else if (a === '--out') args.out = argv[++i];
+    else if (a === '--size') args.size = argv[++i];
     else if (a === '--help' || a === '-h') args.help = true;
   }
   return args;
@@ -37,11 +38,21 @@ function parseArgs(argv) {
 function usage() {
   console.log(`Ask Yourselves share-card generator
 
-  node scripts/generate-share-card.mjs --before <img> --after <img> --out <file.jpg>
+  node scripts/generate-share-card.mjs --before <img> --after <img> --out <file.jpg> [--size <width>x<height>]
 
   --before   portrait of the user today
   --after    age-progressed portrait
-  --out      output path (.jpg recommended)`);
+  --out      output path (.jpg recommended)
+  --size     card dimensions, e.g. 1080x1080 (default: 1200x630)`);
+}
+
+function parseSize(size) {
+  if (!size) return DEFAULT_SIZE;
+  const match = /^(\d+)x(\d+)$/i.exec(size);
+  if (!match || Number(match[1]) < 1 || Number(match[2]) < 1) {
+    throw new Error(`Invalid --size value "${size}". Use WIDTHxHEIGHT, for example 1200x630.`);
+  }
+  return { width: Number(match[1]), height: Number(match[2]) };
 }
 
 async function tryImport(name) {
@@ -52,7 +63,7 @@ const TAGLINE = 'Talk to your future self. Hindsight, in advance.';
 const WORDMARK = 'Ask Yourselves';
 
 /* ---------- path 1: @napi-rs/canvas ---------- */
-async function renderCanvas(mod, { before, after, out }) {
+async function renderCanvas(mod, { before, after, out, width: W, height: H }) {
   const { createCanvas, loadImage, GlobalFonts } = mod;
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext('2d');
@@ -117,14 +128,14 @@ function label(ctx, text, x, y) {
   ctx.fillText(spaced(text), x, y);
   ctx.restore();
 }
-const spaced = (s) => s.split('').join(' ');
+const spaced = (s) => s.split('').join('â€Š');
 
 /* ---------- path 2: sharp ---------- */
-async function renderSharp(sharp, { before, after, out }) {
+async function renderSharp(sharp, { before, after, out, width: W, height: H }) {
   const half = Math.round(W / 2);
   const a = await sharp.default(before).resize(half, H, { fit: 'cover', position: 'top' }).toBuffer();
   const b = await sharp.default(after).resize(W - half, H, { fit: 'cover', position: 'top' }).toBuffer();
-  const overlay = Buffer.from(svgOverlay());
+  const overlay = Buffer.from(svgOverlay(W, H));
   const base = sharp.default({ create: { width: W, height: H, channels: 3, background: INK } });
   await base
     .composite([
@@ -138,7 +149,7 @@ async function renderSharp(sharp, { before, after, out }) {
 }
 
 /* ---------- path 3: SVG only ---------- */
-function svgOverlay() {
+function svgOverlay(W, H) {
   const half = W / 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
     <defs>
@@ -157,11 +168,11 @@ function svgOverlay() {
   </svg>`;
 }
 
-async function renderSvgFallback({ out }) {
+async function renderSvgFallback({ out, width: W, height: H }) {
   const svgPath = out.replace(/\.(jpe?g|png)$/i, '') + '.svg';
   const full = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
     <rect width="${W}" height="${H}" fill="${INK}"/>
-    ${svgOverlay().replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '')}
+    ${svgOverlay(W, H).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '')}
   </svg>`;
   await writeFile(svgPath, full);
   console.warn(`No raster library found. Wrote vector card to ${svgPath}.`);
@@ -172,18 +183,24 @@ async function renderSvgFallback({ out }) {
 async function main() {
   const args = parseArgs(process.argv);
   if (args.help || !args.before || !args.after || !args.out) { usage(); process.exit(args.help ? 0 : 1); }
-  for (const p of [args.before, args.after]) {
-    if (!existsSync(p)) { console.error(`Input not found: ${p}`); process.exit(1); }
+  let size;
+  try { size = parseSize(args.size); } catch (error) { console.error(error.message); process.exit(1); }
+  for (const [option, file] of [['--before', args.before], ['--after', args.after]]) {
+    if (!existsSync(file)) {
+      console.error(`File passed to ${option} does not exist: ${file}`);
+      process.exit(1);
+    }
   }
+  const renderArgs = { ...args, ...size };
 
   const canvasMod = await tryImport('@napi-rs/canvas');
-  if (canvasMod) { console.log('Rendering with @napi-rs/canvas...'); return void console.log('Wrote', await renderCanvas(canvasMod, args)); }
+  if (canvasMod) { console.log('Rendering with @napi-rs/canvas...'); return void console.log('Wrote', await renderCanvas(canvasMod, renderArgs)); }
 
   const sharpMod = await tryImport('sharp');
-  if (sharpMod) { console.log('Rendering with sharp...'); return void console.log('Wrote', await renderSharp(sharpMod, args)); }
+  if (sharpMod) { console.log('Rendering with sharp...'); return void console.log('Wrote', await renderSharp(sharpMod, renderArgs)); }
 
   console.log('Rendering SVG fallback...');
-  console.log('Wrote', await renderSvgFallback(args));
+  console.log('Wrote', await renderSvgFallback(renderArgs));
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
