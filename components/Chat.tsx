@@ -156,7 +156,7 @@ export default function Chat({ futureAge, currentAge, displayName, portraitUrl }
 const s = StyleSheet.create({
   bg: { flex: 1, backgroundColor: '#0d0c0a' },
   header: { paddingTop: 52, paddingBottom: 12, alignItems: 'center', borderBottomColor: '#231f18', borderBottomWidth: 1, gap: 8 },
-  headerPortrait: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: '#c4a878' },
+  headerPortrait: { width: 72, height: 72, borderRadius: 36, borderWidth: 1, borderColor: '#c4a878' },
   headerTitle: { color: '#f4ede0', fontFamily: 'Georgia', fontSize: 18 },
   autoBtn: { marginTop: 2 },
   autoText: { color: '#c4a878', fontSize: 12, letterSpacing: 1 },
