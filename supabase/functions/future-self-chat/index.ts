@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
     },
-    // gpt-5.6-luna rejects custom temperature (only default 1 supported) — verified 2026-07-19
+    // gpt-5.6-luna rejects custom temperature (only default 1 supported), verified 2026-07-19
     body: JSON.stringify({ model: 'gpt-5.6-luna', messages, max_completion_tokens: 600 }),
   });
   if (!ai.ok) {
