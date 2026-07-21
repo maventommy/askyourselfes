@@ -25,6 +25,12 @@ The brand stake: **the only AI you don't have to perform for.** No feed, no foll
 - **Models:** OpenAI GPT-5.6 Luna (chat), gpt-image-2 (age progression), gpt-4o-mini-tts (voice).
 - **Unit economics:** roughly $0.002 per chat exchange, about $0.05 for the one-time portrait, about $0.001 per spoken reply.
 
+## How GPT-5.6 and Codex were used
+
+**GPT-5.6 is the product's runtime brain.** The `future-self-chat` Edge Function assembles a grounded system prompt from the user's interview and message history and calls `gpt-5.6-luna` for every reply. `gpt-image-2` generates the age-progressed portrait and `gpt-4o-mini-tts` speaks the replies. The running app is powered end to end by OpenAI models.
+
+**Codex** was used to build and harden the social share-card generator (`scripts/generate-share-card.mjs`): it added the configurable `--size` option and input-file validation, and caught and fixed a function-scope bug in the same pass (commit `815108a`). The rest of the application was built with AI coding agents under human direction. We have kept this description accurate to what actually happened rather than overstating Codex's share.
+
 ## Run it
 
 Prerequisites: Node 20+, a Supabase project, an OpenAI API key.
