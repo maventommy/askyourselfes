@@ -59,6 +59,20 @@ deno test supabase/functions/future-self-chat/prompt_test.ts
 deno test supabase/functions/age-portrait/prompt_test.ts
 ```
 
+## Share card
+
+Generate a branded 1200x630 social card from a before/after portrait pair (the viral share seed: post your "today" next to "years on").
+
+```bash
+node scripts/generate-share-card.mjs --before you-today.jpg --after you-aged.jpg --out card.jpg
+```
+
+The script prefers `@napi-rs/canvas`, falls back to `sharp`, and if neither is installed it writes a vector `.svg` you can rasterize yourself. For JPEG output, install a renderer:
+
+```bash
+npm i @napi-rs/canvas   # or: npm i sharp
+```
+
 ## Honest notes
 
 - 18+ by policy. The interview and chat touch real feelings; this is not a toy for minors.
