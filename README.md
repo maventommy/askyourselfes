@@ -18,16 +18,17 @@ The brand stake: **the only AI you don't have to perform for.** No feed, no foll
 ## Stack
 
 - **Client:** Expo (React Native), TypeScript. One codebase for iOS, Android, and web.
-- **Backend:** Supabase. Anonymous auth, Postgres with row-level security (every user sees only their own rows), Storage for portraits, and three Deno Edge Functions:
+- **Backend:** Supabase. Anonymous auth, Postgres with row-level security (every user sees only their own rows), Storage for portraits, and four Deno Edge Functions:
   - `future-self-chat`: builds the grounded system prompt, calls `gpt-5.6-luna`, persists the exchange.
   - `age-portrait`: selfie in, age-progressed portrait out via `gpt-image-2` (`/v1/images/edits`), stored per user, strictly one generation per user.
-  - `speak`: text to speech for replies.
-- **Models:** OpenAI GPT-5.6 Luna (chat), gpt-image-2 (age progression), gpt-4o-mini-tts (voice).
+  - `speak`: text to speech for replies (`gpt-4o-mini-tts`), with optional autoplay.
+  - `transcribe`: voice in, text out via `gpt-4o-transcribe`, so you can talk to your future self instead of typing.
+- **Models:** OpenAI GPT-5.6 Luna (chat), gpt-image-2 (age progression), gpt-4o-mini-tts (voice out), gpt-4o-transcribe (voice in).
 - **Unit economics:** roughly $0.002 per chat exchange, about $0.05 for the one-time portrait, about $0.001 per spoken reply.
 
 ## How GPT-5.6 and Codex were used
 
-**GPT-5.6 is the product's runtime brain.** The `future-self-chat` Edge Function assembles a grounded system prompt from the user's interview and message history and calls `gpt-5.6-luna` for every reply. `gpt-image-2` generates the age-progressed portrait and `gpt-4o-mini-tts` speaks the replies. The running app is powered end to end by OpenAI models.
+**GPT-5.6 is the product's runtime brain.** The `future-self-chat` Edge Function assembles a grounded system prompt from the user's interview and message history and calls `gpt-5.6-luna` for every reply. `gpt-image-2` generates the age-progressed portrait, `gpt-4o-mini-tts` speaks the replies, and `gpt-4o-transcribe` turns your spoken words into text so you can talk to your future self out loud. The running app is powered end to end by OpenAI models.
 
 **Codex** was used to build and harden the social share-card generator (`scripts/generate-share-card.mjs`): it added the configurable `--size` option and input-file validation, and caught and fixed a function-scope bug in the same pass (commit `815108a`). The rest of the application was built with AI coding agents under human direction. We have kept this description accurate to what actually happened rather than overstating Codex's share.
 
