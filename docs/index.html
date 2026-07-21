@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask Yourselves — Talk to your future self</title>
+<style>
+  :root{
+    --ink:#0d0c0a; --ink-2:#141210; --cream:#f4ede0; --gold:#c4a878;
+    --gold-warm:#d8b775; --muted:#9a938a; --line:rgba(196,168,120,.18);
+    --serif:Georgia,'Times New Roman',serif;
+    --sans:'Helvetica Neue',Arial,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--ink);color:var(--cream);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  .grain{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 40px;}
+  h1,h2,h3{font-family:var(--serif);font-weight:400;margin:0;}
+  a{color:inherit;text-decoration:none;}
+
+  /* nav */
+  nav{position:absolute;top:0;left:0;right:0;z-index:5;}
+  nav .row{display:flex;align-items:center;justify-content:space-between;padding:34px 0;}
+  .mark{font-family:var(--serif);font-size:24px;color:var(--gold);letter-spacing:.01em;}
+  .nav-cta{font-family:var(--sans);font-size:14px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);}
+  .nav-cta:hover{color:var(--cream);}
+
+  /* hero */
+  .hero{position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden;}
+  .glow{position:absolute;top:50%;right:6%;transform:translateY(-50%);
+    width:900px;height:900px;border-radius:50%;z-index:0;
+    background:radial-gradient(circle, rgba(196,168,120,.20) 0%, rgba(196,168,120,.06) 34%, rgba(13,12,10,0) 66%);
+    filter:blur(6px);}
+  .hero .grid{position:relative;z-index:3;display:grid;grid-template-columns:1.05fr .95fr;
+    gap:64px;align-items:center;width:100%;}
+  .eyebrow{font-family:var(--sans);font-size:13px;letter-spacing:.32em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:30px;}
+  h1{font-size:clamp(42px,5.4vw,74px);line-height:1.05;letter-spacing:-.01em;color:var(--cream);}
+  .sub{font-size:clamp(17px,1.5vw,21px);line-height:1.6;color:var(--muted);
+    max-width:30ch;margin:30px 0 40px;}
+  .cta{display:inline-flex;align-items:center;gap:12px;background:var(--gold-warm);color:#1c1710;
+    font-family:var(--sans);font-weight:600;font-size:16px;padding:17px 34px;border-radius:999px;
+    transition:transform .25s ease,background .25s ease;}
+  .cta:hover{transform:translateY(-2px);background:var(--cream);}
+  .cta .arrow{font-size:18px;}
+  .portrait{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+    aspect-ratio:4/5;box-shadow:0 40px 120px rgba(0,0,0,.55);}
+  .portrait img{width:100%;height:100%;object-fit:cover;object-position:center 22%;display:block;}
+  .portrait .cap{position:absolute;left:20px;bottom:18px;font-family:var(--sans);font-size:12px;
+    letter-spacing:.24em;text-transform:uppercase;color:var(--cream);text-shadow:0 2px 12px rgba(0,0,0,.8);}
+
+  /* generic section */
+  section.band{position:relative;z-index:3;padding:130px 0;border-top:1px solid var(--line);}
+  .kicker{font-family:var(--sans);font-size:13px;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:26px;}
+  h2{font-size:clamp(30px,3.6vw,50px);line-height:1.12;color:var(--cream);max-width:20ch;}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:54px;margin-top:70px;}
+  .step .n{font-family:var(--serif);font-size:20px;color:var(--gold);margin-bottom:20px;
+    padding-bottom:16px;border-bottom:1px solid var(--line);}
+  .step h3{font-size:24px;color:var(--cream);margin-bottom:12px;}
+  .step p{color:var(--muted);line-height:1.65;font-size:16px;margin:0;}
+
+  /* statement */
+  .statement{text-align:center;}
+  .statement h2{font-family:var(--serif);font-size:clamp(30px,4.4vw,62px);line-height:1.18;
+    max-width:18ch;margin:0 auto;color:var(--cream);}
+  .statement h2 em{font-style:italic;color:var(--gold);}
+  .statement p{color:var(--muted);max-width:52ch;margin:34px auto 0;line-height:1.7;font-size:17px;}
+
+  /* plan */
+  .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:44px;margin-top:70px;}
+  .tier .name{font-family:var(--serif);font-size:30px;color:var(--cream);margin-bottom:6px;}
+  .tier .price{font-family:var(--sans);font-size:14px;letter-spacing:.06em;color:var(--gold);
+    margin-bottom:22px;}
+  .tier.legacy .name{color:var(--gold);}
+  .tier p{color:var(--muted);line-height:1.65;font-size:16px;margin:0;}
+
+  /* closing */
+  .closing{text-align:center;padding:150px 0 120px;}
+  .closing h2{font-family:var(--serif);font-size:clamp(38px,5.4vw,78px);margin:0 auto 40px;color:var(--cream);}
+  .closing .cta{font-size:17px;}
+  footer{border-top:1px solid var(--line);padding:40px 0;}
+  footer .row{display:flex;justify-content:space-between;align-items:center;
+    font-family:var(--sans);font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+
+  @media(max-width:860px){
+    .wrap{padding:0 24px;}
+    .hero .grid{grid-template-columns:1fr;gap:44px;padding:120px 0 80px;}
+    .portrait{max-width:420px;}
+    .steps,.tiers{grid-template-columns:1fr;gap:44px;}
+    section.band{padding:90px 0;}
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<nav><div class="wrap"><div class="row">
+  <div class="mark">Ask Yourselves</div>
+  <a class="nav-cta" href="#join">Request access</a>
+</div></div></nav>
+
+<header class="hero">
+  <div class="glow"></div>
+  <div class="wrap"><div class="grid">
+    <div>
+      <div class="eyebrow">Hindsight, in advance</div>
+      <h1>Talk to yourself,<br>thirty years on.</h1>
+      <p class="sub">Your own voice and face, decades from now. Grounded in your real life.</p>
+      <a class="cta" href="#join">Meet your future self <span class="arrow">&rarr;</span></a>
+    </div>
+    <div class="portrait">
+      <img src="hero-portrait.jpg" alt="Your future self">
+      <div class="cap">You, years on</div>
+    </div>
+  </div></div>
+</header>
+
+<section class="band"><div class="wrap">
+  <div class="kicker">How it works</div>
+  <h2>Three steps to the conversation you have been putting off.</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="n">01</div>
+      <h3>Tell it your life</h3>
+      <p>A short interview, one question at a time. It listens the way no feed ever does, and builds a private picture of who you actually are.</p>
+    </div>
+    <div class="step">
+      <div class="n">02</div>
+      <h3>Meet your older self</h3>
+      <p>Add a selfie and see your own face, years on. The person who already lived through what you are deciding now.</p>
+    </div>
+    <div class="step">
+      <div class="n">03</div>
+      <h3>Talk, and be told the truth</h3>
+      <p>A grounded conversation in your own aged voice. It remembers, and it is allowed to disagree with you.</p>
+    </div>
+  </div>
+</div></section>
+
+<section class="band statement"><div class="wrap">
+  <div class="kicker" style="text-align:center">The stake</div>
+  <h2>The only AI you do not have to <em>perform</em> for.</h2>
+  <p>No feed, no followers, nobody watching. The voice on the other side is you, so honesty is the whole point. This is the one place you can stop wearing the mask.</p>
+</div></section>
+
+<section class="band"><div class="wrap">
+  <div class="kicker">The plan</div>
+  <h2>Start free. Grow into the whole of it.</h2>
+  <div class="tiers">
+    <div class="tier">
+      <div class="name">Free</div>
+      <div class="price">Always</div>
+      <p>A text future self, one aged photo, and memory that carries between conversations.</p>
+    </div>
+    <div class="tier">
+      <div class="name">Plus</div>
+      <div class="price">8.99 / month</div>
+      <p>Your cloned voice, deeper memory, and messages you can time-lock to arrive years from now.</p>
+    </div>
+    <div class="tier legacy">
+      <div class="name">Legacy</div>
+      <div class="price">Coming with funding</div>
+      <p>A living, age-progressed face in real time. And a voice that stays, so your family can still ask you, after you are gone.</p>
+    </div>
+  </div>
+</div></section>
+
+<section class="band closing" id="join"><div class="wrap">
+  <h2>Hindsight, in advance.</h2>
+  <a class="cta" href="mailto:hello@askyourselves.app">Request early access <span class="arrow">&rarr;</span></a>
+</div></section>
+
+<footer><div class="wrap"><div class="row">
+  <span>Ask Yourselves</span>
+  <span>Built in Bergen</span>
+</div></div></footer>
+
+</body>
+</html>
