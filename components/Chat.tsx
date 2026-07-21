@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { ensureAnonSession } from '../lib/supabase';
 import { loadHistory, sendMessage, type Msg } from '../lib/chat';
-import { speak, voiceSupported } from '../lib/voice';
+import { speak, transcribe, voiceSupported, micSupported } from '../lib/voice';
 
 type ChatProps = {
   futureAge: number | null;
@@ -20,6 +20,10 @@ export default function Chat({ futureAge, currentAge, displayName, portraitUrl }
     try { return Platform.OS === 'web' && localStorage.getItem('ay_autoplay') === '1'; } catch { return false; }
   });
   const listRef = useRef<FlatList<Msg>>(null);
+  const recRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
 
   function toggleAutoplay() {
     setAutoplay((v) => {
@@ -27,6 +31,37 @@ export default function Chat({ futureAge, currentAge, displayName, portraitUrl }
       try { if (Platform.OS === 'web') localStorage.setItem('ay_autoplay', next ? '1' : '0'); } catch {}
       return next;
     });
+  }
+
+  async function toggleMic() {
+    if (transcribing) return;
+    if (recording) { recRef.current?.stop(); return; }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+      mr.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setRecording(false);
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' });
+        if (!blob.size) return;
+        setTranscribing(true);
+        try {
+          const t = await transcribe(blob);
+          if (t) setText((prev) => (prev ? `${prev} ${t}` : t));
+        } catch (e) {
+          console.warn('transcribe failed', e);
+        } finally {
+          setTranscribing(false);
+        }
+      };
+      recRef.current = mr;
+      mr.start();
+      setRecording(true);
+    } catch (e) {
+      console.warn('mic failed', e);
+    }
   }
 
   async function hear(index: number, content: string) {
@@ -104,7 +139,12 @@ export default function Chat({ futureAge, currentAge, displayName, portraitUrl }
         )}
       />
       <View style={s.inputRow}>
-        <TextInput style={s.input} value={text} onChangeText={setText} placeholder="Ask yourself…" placeholderTextColor="#998b73" />
+        {micSupported && (
+          <Pressable style={[s.mic, recording && s.micRec]} onPress={toggleMic} disabled={transcribing}>
+            <Text style={s.micText}>{transcribing ? '…' : recording ? '◉ stop' : '🎤'}</Text>
+          </Pressable>
+        )}
+        <TextInput style={s.input} value={text} onChangeText={setText} placeholder={recording ? 'Listening…' : 'Ask yourself…'} placeholderTextColor="#998b73" />
         <Pressable style={[s.send, busy && s.dim]} onPress={send} disabled={busy}>
           <Text style={s.sendText}>{busy ? '…' : 'Send'}</Text>
         </Pressable>
@@ -130,6 +170,9 @@ const s = StyleSheet.create({
   hear: { marginTop: 8, alignSelf: 'flex-start' },
   hearText: { color: '#c4a878', fontSize: 12, letterSpacing: 1 },
   inputRow: { flexDirection: 'row', padding: 12, gap: 8, backgroundColor: '#0d0c0a' },
+  mic: { minWidth: 44, paddingHorizontal: 12, backgroundColor: '#181612', borderColor: '#3a342b', borderWidth: 1, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  micRec: { backgroundColor: '#c0392b', borderColor: '#c0392b' },
+  micText: { color: '#f4ede0', fontSize: 14, fontWeight: '600' },
   input: { flex: 1, backgroundColor: '#181612', borderColor: '#3a342b', borderWidth: 1, borderRadius: 22, paddingHorizontal: 16, paddingVertical: 10, color: '#f4ede0' },
   send: { backgroundColor: '#c4a878', borderRadius: 22, paddingHorizontal: 18, justifyContent: 'center' },
   dim: { opacity: 0.5 },
